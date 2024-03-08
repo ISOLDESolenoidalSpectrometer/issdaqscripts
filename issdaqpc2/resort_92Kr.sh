@@ -1,0 +1,23 @@
+#!/bin/bash
+
+DATADIR="/TapeData/IS711"
+CONFIGDIR="/home/isslocal/calibrations"
+SETTINGSFILE="settings_Kr_20221024.dat"
+CALIBFILE="calibration_is711_20221024.cal"
+REACTIONFILE="reaction_92Kr_20221026.dat"
+
+CURTIME=$(date +%Y%m%d_%H%M%S)
+
+shopt -s extglob
+
+# Target 179
+#DATAFILES+=" $DATADIR/R@(24|25|26|27|28|29|30|31|32|33|34|35|36)_+([0-15])"
+# Target 137
+#DATAFILES+=" $DATADIR/R@(129|130|131|132|133|134|135|136|137|138|139|141|142)_+([0-15])"
+# Target 135
+#DATAFILES+=" $DATADIR/R@(81|82|83|85|86|87)_+([0-15])"
+# Target 109
+DATAFILES+=" $DATADIR/R@(37|38|39|40|41|44|45|46|47|49|50|51|52|53|55|56|57|58|59|60|61|62|63|64|65|66|67|69|70|71|72|73|74|75|76|77|78|79|80)_+([0-15])"
+
+## Histogram them all together
+iss_sort -s $CONFIGDIR/$SETTINGSFILE -c $CONFIGDIR/$CALIBFILE -r $CONFIGDIR/$REACTIONFILE -i $DATAFILES -o 92Kr_109_sum_hists_${CURTIME}.root -e

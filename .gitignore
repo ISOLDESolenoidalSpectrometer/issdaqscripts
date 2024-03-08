@@ -1,0 +1,10 @@
+*.pyc
+*.py~
+*.root
+*.C~
+*C.d
+*C.so
+*.pcm
+*.C.save*
+*.pdf
+*.png

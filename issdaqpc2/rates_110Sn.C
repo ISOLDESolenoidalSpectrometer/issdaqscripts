@@ -1,0 +1,100 @@
+
+void rates_110Sn(){
+  gStyle->SetOptStat(0);
+  auto t = new TNtuple("Rates_data", "Data for IS686", "Run:Pulses:Int:DP:FE:E0:E1:E2:E3:B0:B1:B2:B3");
+  t->ReadFile("/TapeData/IS686/output_numbers.dat");
+  t->SetMarkerStyle(20);
+  TLine* line = new TLine();
+  line->SetLineStyle(2);
+  TLatex* latex = new TLatex();
+  
+  TCanvas* cc = new TCanvas("cc", "cc", 1500, 800);
+  cc->Divide(2,2);
+  cc->cd(1);
+  t->Draw("FE:Run>>fe_run");
+  TH2F* hfe_run = (TH2F*)gDirectory->Get("fe_run");
+  hfe_run->GetYaxis()->SetLimits(0, 200);
+  hfe_run->GetXaxis()->SetTitle("Run");
+  hfe_run->GetYaxis()->SetTitle("FE events / proton pulse");
+  hfe_run->Draw();
+  line->DrawLine(25, 0, 25, 180);
+  line->DrawLine(43, 0, 43, 180);
+  line->DrawLine(54, 0, 54, 180);
+  line->DrawLine(68, 0, 68, 180);
+  line->DrawLine(79, 0, 79, 180);
+  line->DrawLine(92, 0, 92, 180);
+  cc->cd(2);
+  t->Draw("DP:Run>>dp_run");
+  TH2F* hdp_run = (TH2F*)gDirectory->Get("dp_run");
+  hdp_run->GetYaxis()->SetLimits(0, 25);
+  hdp_run->GetXaxis()->SetTitle("Run");
+  hdp_run->GetYaxis()->SetTitle("(d,p) events / proton pulse");
+  hdp_run->Draw();
+  line->DrawLine(25, 0, 25, 24);
+  line->DrawLine(43, 0, 43, 24);
+  line->DrawLine(54, 0, 54, 24);
+  line->DrawLine(68, 0, 68, 24);
+  line->DrawLine(79, 0, 79, 24);
+  line->DrawLine(92, 0, 92, 24);
+
+  cc->cd(3);
+  t->Draw("E0:Run>>e0_run");
+  TH2F* he0_run = (TH2F*)gDirectory->Get("e0_run");
+  he0_run->GetYaxis()->SetLimits(0, 70);
+  he0_run->GetXaxis()->SetTitle("Run");
+  he0_run->GetYaxis()->SetTitle("ELUM deuteron events / proton pulse");
+  he0_run->Draw();
+  line->DrawLine(25, 0, 25, 60);
+  line->DrawLine(43, 0, 43, 60);
+  line->DrawLine(54, 0, 54, 60);
+  line->DrawLine(68, 0, 68, 60);
+  line->DrawLine(79, 0, 79, 60);
+  line->DrawLine(92, 0, 92, 60);
+
+  t->SetMarkerColor(2);
+  t->Draw("E1:Run>>e1_run", "", "same");
+  TH2F* he1_run = (TH2F*)gDirectory->Get("e1_run");
+  he1_run->Draw("same");
+
+  t->SetMarkerColor(3);
+  t->Draw("E2:Run>>e2_run", "", "same");
+  TH2F* he2_run = (TH2F*)gDirectory->Get("e2_run");
+  he2_run->Draw("same");
+
+  t->SetMarkerColor(4);
+  t->Draw("E3:Run>>e3_run", "", "same");
+  TH2F* he3_run = (TH2F*)gDirectory->Get("e3_run");
+  he3_run->Draw("same");
+
+  cc->cd(4);
+  t->Draw("B0:Run>>b0_run");
+  TH2F* hb0_run = (TH2F*)gDirectory->Get("b0_run");
+  hb0_run->SetMarkerColor(1);
+  hb0_run->GetYaxis()->SetLimits(0, 70);
+  hb0_run->GetXaxis()->SetTitle("Run");
+  hb0_run->GetYaxis()->SetTitle("ELUM bgd events / proton pulse");
+  hb0_run->Draw();
+  line->DrawLine(25, 0, 25, 60);
+  line->DrawLine(43, 0, 43, 60);
+  line->DrawLine(54, 0, 54, 60);
+  line->DrawLine(68, 0, 68, 60);
+  line->DrawLine(79, 0, 79, 60);
+  line->DrawLine(92, 0, 92, 60);
+
+
+  t->SetMarkerColor(2);
+  t->Draw("B1:Run>>b1_run", "", "same");
+  TH2F* hb1_run = (TH2F*)gDirectory->Get("b1_run");
+  hb1_run->Draw("same");
+
+  t->SetMarkerColor(3);
+  t->Draw("B2:Run>>b2_run", "", "same");
+  TH2F* hb2_run = (TH2F*)gDirectory->Get("b2_run");
+  hb2_run->Draw("same");
+
+  t->SetMarkerColor(4);
+  t->Draw("B3:Run>>b3_run", "", "same");
+  TH2F* hb3_run = (TH2F*)gDirectory->Get("b3_run");
+  hb3_run->Draw("same");
+
+}
