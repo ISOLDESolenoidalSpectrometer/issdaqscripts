@@ -17,7 +17,7 @@ import urllib3
 # Settings
 THRESHOLD = 10000 # change font colour when threshold reached
 NEGATIVE = 5000000 # when the histograms are zeroed, we get a negative value that is unsigned, so a large positive false rate
-DAQ_URL =  'http://issdaqpc:8015/'
+DAQ_URL =  'http://issdaqpc1:8015/'
 DAQ_WSDL_SERVICE_NAME = 'DataAcquisitionControlServer'
 SPECTRUM_WSDL_SERVICE_NAME = 'SpectrumService'
 FULL_DAQ_URL = DAQ_URL + DAQ_WSDL_SERVICE_NAME
@@ -27,9 +27,9 @@ UPDATE_TIME = 2 # seconds
 
 
 # Channel mapping to MIDAS HISTOGRAM numbers / CAEN ADC channels
-RecoildE_chs = [64,65,66,67,68,69,70,71,72,73,74,75,76]
+RecoildE_chs = [64,65,66,67,68,69,70,71,72,73,74,75]
 ELUM_chs = [80,81,82,83]
-#MWPC_chs = [88,89,90,91]
+MWPC_chs = [76,77,78,86]
 #ZD_chs = [86,87]
 Laser_ch = 91
 SC_ch = 92
@@ -122,9 +122,9 @@ if __name__ == '__main__':
 
 			payload = ''
 			if result != '' and result != None:
-				for i in range(len(RecoildE_chs)):
-					print_rates(result, "RecoildE", RecoildE_chs[i])
-					payload += 'detector,name=Recoil,id=dE,sector=' + str(i) + ' value=' + str( get_rate(result,RecoildE_chs[i]) ) + '\n'
+				#for i in range(len(RecoildE_chs)):
+				#	print_rates(result, "RecoildE", RecoildE_chs[i])
+				#	payload += 'detector,name=Recoil,id=dE,sector=' + str(i) + ' value=' + str( get_rate(result,RecoildE_chs[i]) ) + '\n'
 
 				#for i in range(len(MWPC_chs)):
 				#	print_rates(result, "MWPC", MWPC_chs[i])

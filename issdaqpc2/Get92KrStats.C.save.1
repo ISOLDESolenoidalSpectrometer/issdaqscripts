@@ -1,0 +1,46 @@
+#include <fstream>
+#include <iostream>
+#include <string>
+
+#include <TFile.h>
+#include <TH1F.h>
+#include <TH2F.h>
+
+void Get92KrStats( std::string file_name, std::string subrun, double time ){
+	// Various numbers
+	int elum_peak;
+	
+	// File and pointers
+	TFile *f = new TFile( file_name.data(), "READ" );
+	TH1F *h1;
+	ofstream out_file;
+	out_file.open("output_numbers.dat", ios::app);
+	
+	// Check files are open
+	if ( !f->IsOpen() ){
+		std::cerr << "FILE FAILED TO OPEN" << std::endl;
+		std::exit(1);
+	}
+	if ( !out_file.is_open() ){
+		std::cerr << "FILE FAILED TO OPEN" << std::endl;
+		std::exit(1);
+	}
+		
+	// Elum
+	h1 = (TH1F*)f->Get( "ElumDetector/elum_ebis_on" );
+	elum_peak = h1->Integral( h1->FindBin( 420 ), h1->FindBin( 565 ) );
+
+
+	// Get the hist information desired
+	out_file <<
+		subrun << "\t" <<
+		time << "\t" <<
+		elum_peak << "\t" <<
+		std::endl;
+
+	// Close files
+	out_file.close();
+	f->Close();
+
+	return;
+}

@@ -22,7 +22,7 @@ import numpy as np
 # Settings
 THRESHOLD = 10000 # change font colour when threshold reached
 NEGATIVE = 5000000 # when the histograms are zeroed, we get a negative value that is unsigned, so a large positive false rate
-DAQ_URL =  'http://issdaqpc:8015/'
+DAQ_URL =  'http://issdaqpc1:8015/'
 DAQ_WSDL_SERVICE_NAME = 'DataAcquisitionControlServer'
 SPECTRUM_WSDL_SERVICE_NAME = 'SpectrumService'
 FULL_DAQ_URL = DAQ_URL + DAQ_WSDL_SERVICE_NAME

@@ -1,1 +1,3 @@
-3-59/3 * * * * /home/isslocal/julabolib/check_julabo.py > /dev/null 2>&1
+# Hopefully, this isn't needed any more, because I modified the scripts in /home/isslocal/nxcals
+# to set the username to iss and the key to the nxcals.keytab.
+#0 8,12,19 * * * kinit -f -r 5d -kt /home/isslocal/nxcals/nxcals.keytab iss

@@ -39,6 +39,7 @@ fi
 # Set the fan speed
 # 3 = set fan speed, 1 or 2 = which side
 utca_clear_serial.sh
-echo -e "fan_ctl\r\n3\r\n1\r\n${FAN_SPEED}\r\n" > /dev/ttyACM0
-echo -e "fan_ctl\r\n3\r\n2\r\n${FAN_SPEED}\r\n" > /dev/ttyACM0
+echo -ne "\rfan_ctl\r3\r1\r${FAN_SPEED}\r" > /dev/ttyACM0
+utca_clear_serial.sh
+echo -ne "\rfan_ctl\r3\r2\r${FAN_SPEED}\r" > /dev/ttyACM0
 echo "Set fan speed to ${FAN_SPEED}. Listen/feel to see if it worked on both sides!"

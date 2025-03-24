@@ -11,11 +11,11 @@ if module == 'iss00':
 elif module == 'iss01':
 	serial = 'FT5Z6QIP'
 elif module == 'iss02':
-	serial = "FT5Z6TFW"
-#	serial = "FT5ZEXR5"
-elif module == 'iss03':
-	serial = "FT5ZEXR5"
 #	serial = "FT5Z6TFW"
+	serial = "FT5ZEXR5"
+elif module == 'iss03':
+#	serial = "FT5ZEXR5"
+	serial = "FT5Z6TFW"
 
 for port in ports:
 

@@ -1,0 +1,204 @@
+TFile* f;
+TH1D* h;
+TH2D* m;
+TH2D* mz[3];
+
+TH1D* hbgd;
+TH1D* h0;
+TH1D* h154;
+TH1D* h255;
+TH1D* h644;
+TH1D* h979;
+TF1* fpeaks;
+TF1* f0;
+TF1* f154;
+TF1* f255;
+TF1* f644;
+TF1* f979;
+TF1* fbgd;
+const int GOOD_SUBRUNS[32] = {-1, -1, -1, 1, -1, 0, 0, 0, 0, 0, 2,
+			      0, 1, 0, 0, 5, 1, 0, -1, -1, 5,
+			      0, 0, 4, 5, 0, 7, 0, -1, -1, 10,
+			      5};
+
+void summed_viewer(){
+  gStyle->SetOptStat(0);
+  TCanvas* cc = new TCanvas("cc", "cc", 1200, 800);
+  cc->Divide(2,1);
+  cc->cd(1);
+  TGraphErrors* g = new TGraphErrors();
+  int np = 0;
+  TH1D* hsum = new TH1D("hsum", "", 850, -2000, 15000);
+  TH2D* msum = new TH2D("msum", "", 180, 0, 180, 800, -1000, 15000);
+  TH2D* mzsum[3];
+  for(int k = 0; k < 3; k++){
+    mzsum[k] = new TH2D(Form("msum%d", k), "", 530, -630, -100, 850, -2000, 15000);
+  }
+  //  TH2D* msum = 
+  for(int i = 1; i <= 31; i++){
+    cout<<i<<" "<<GOOD_SUBRUNS[i]<<endl;
+    int subrun_limit = GOOD_SUBRUNS[i];
+    
+    for(int j = 0; j <= subrun_limit; j++){
+      f = new TFile(Form("/TapeData/IS686/R%d_%d_hists.root", i, j));
+      h = (TH1D*)f->Get("EBISMode/Ex_ebis_on");
+      m = (TH2D*)f->Get("EBISMode/Ex_vs_theta_ebis_on");
+      for(int k = 0; k < 3; k++){
+	mz[k] = (TH2D*)f->Get(Form("EBISMode/module_%d/Ex_vs_z_ebis_on_mod%d", k, k));
+	mzsum[k]->Add(mz[k]);
+      }
+      hsum->Add(h);
+      msum->Add(m);
+    }
+  }
+  hsum->SetLineColor(1);
+  hsum->GetXaxis()->SetRangeUser(-500, 3500);
+  hsum->Draw();
+  fpeaks = new TF1("fpeaks", "gaus(0)+gaus(3)+gaus(6)+gaus(9)+gaus(12)+pol2(15)", -400, 1700);
+  fpeaks->SetParameter(1, 100); fpeaks->SetParLimits(1, 50, 150); fpeaks->SetParLimits(0, 0, 500);
+  fpeaks->SetParameter(4, 250); fpeaks->SetParLimits(4, 150, 300); fpeaks->SetParLimits(3, 0, 2000);
+  fpeaks->SetParameter(7, 350); fpeaks->SetParLimits(7, 300, 450); fpeaks->SetParLimits(6, 0, 2000);
+  fpeaks->SetParameter(10, 750); fpeaks->SetParLimits(10, 600, 900); fpeaks->SetParLimits(9, 0, 2000);
+  fpeaks->SetParameter(13, 1100); fpeaks->SetParLimits(13, 1050, 1200); fpeaks->SetParLimits(12, 0, 1000);
+  fpeaks->SetParameter(2, 30); fpeaks->SetParLimits(2, 0, 100);
+  fpeaks->SetParameter(5, 30);  fpeaks->SetParLimits(5, 0, 100);
+  fpeaks->SetParameter(8, 40);  fpeaks->SetParLimits(8, 0, 100);
+  fpeaks->SetParameter(11, 40);   fpeaks->SetParLimits(11, 0, 100);
+  fpeaks->SetParameter(14, 40);  fpeaks->SetParLimits(14, 0, 100);
+  hsum->Fit(fpeaks, "QN0");
+  hsum->GetXaxis()->SetTitle("Excitation energy (keV)");
+  hsum->GetYaxis()->SetTitle("Counts / 20 keV");
+  
+  fpeaks->SetLineColor(1);
+  fpeaks->Draw("same");
+
+  f0 = (TF1*)fpeaks->Clone("f0");
+  f0->SetParameter(3, 0);
+  f0->SetParameter(6, 0);
+  f0->SetParameter(9, 0);
+  f0->SetParameter(12, 0);
+  f0->SetLineStyle(2);
+  f0->Draw("same");
+
+  f154 = (TF1*)fpeaks->Clone("f154");
+  f154->SetParameter(0, 0);
+  f154->SetParameter(6, 0);
+  f154->SetParameter(9, 0);
+  f154->SetParameter(12, 0);
+  f154->SetLineStyle(2);
+  f154->Draw("same");
+
+  f255 = (TF1*)fpeaks->Clone("f255");
+  f255->SetParameter(0, 0);
+  f255->SetParameter(3, 0);
+  f255->SetParameter(9, 0);
+  f255->SetParameter(12, 0);
+  f255->SetLineStyle(2);
+  f255->Draw("same");
+
+  f644 = (TF1*)fpeaks->Clone("f644");
+  f644->SetParameter(0, 0);
+  f644->SetParameter(3, 0);
+  f644->SetParameter(6, 0);
+  f644->SetParameter(12, 0);
+  f644->SetLineStyle(2);
+  f644->Draw("same");
+
+  f979 = (TF1*)fpeaks->Clone("f979");
+  f979->SetParameter(0, 0);
+  f979->SetParameter(3, 0);
+  f979->SetParameter(6, 0);
+  f979->SetParameter(9, 0);
+  f979->SetLineStyle(2);
+  f979->Draw("same");
+
+  fbgd = (TF1*)fpeaks->Clone("fbgd");
+  fbgd->SetParameter(0, 0);
+  fbgd->SetParameter(3, 0);
+  fbgd->SetParameter(6, 0);
+  fbgd->SetParameter(9, 0);
+  fbgd->SetParameter(12, 0);
+  
+  TCanvas* cm = new TCanvas("cm", "cm", 1200, 800);
+  cm->cd();
+  msum->Draw("colz");
+  msum->GetXaxis()->SetRangeUser(0, 50);
+  msum->GetYaxis()->SetRangeUser(-500, 2500);
+  msum->GetXaxis()->SetTitle("CoM angle (deg)");
+  msum->GetYaxis()->SetTitle("Excitation energy (keV)");
+
+  // TCanvas* cp = new TCanvas("cp", "cp", 1500, 600);
+  // cp->Divide(3,1);
+  // cp->cd(1)->SetLogy(1);
+  hbgd = (TH1D*)msum->ProjectionX("hbgd", msum->GetYaxis()->FindBin(-500), msum->GetYaxis()->FindBin(0.));
+  //  hbgd->Draw("hist");
+  
+  cc->cd(2)->SetLogy(1);
+  h644 = (TH1D*)msum->ProjectionX("h644", msum->GetYaxis()->FindBin(600), msum->GetYaxis()->FindBin(900));
+  h644->SetLineColor(3);
+  h644->SetMarkerColor(3);
+  h644->SetMarkerStyle(21);  
+  h644->Add(hbgd, -fbgd->Integral(600, 900)/fbgd->Integral(-500, 0));
+  h644->Draw("E1");
+  
+  h644->GetXaxis()->SetRangeUser(8, 50);
+  h644->GetYaxis()->SetRangeUser(5, 10000);
+  h644->GetXaxis()->SetTitle("CoM angle (deg)");
+  h644->GetYaxis()->SetTitle("Counts / deg");
+  
+
+  h0 = (TH1D*)msum->ProjectionX("h0", msum->GetYaxis()->FindBin(0.), msum->GetYaxis()->FindBin(100));
+  h0->SetLineColor(1);
+  h0->SetMarkerColor(1);
+  h0->SetMarkerStyle(20);
+  h0->Add(hbgd, -fbgd->Integral(0, 100)/fbgd->Integral(-500, 0));
+  h0->Draw("E1 same");
+
+  h154 = (TH1D*)msum->ProjectionX("h154", msum->GetYaxis()->FindBin(200.), msum->GetYaxis()->FindBin(300));
+  h154->SetLineColor(2);
+  h154->SetMarkerColor(2);
+  h154->SetMarkerStyle(22);
+  h154->Add(hbgd, -fbgd->Integral(200, 300)/fbgd->Integral(-500, 0));
+  h154->Draw("E1 same");
+
+  h255 = (TH1D*)msum->ProjectionX("h255", msum->GetYaxis()->FindBin(450), msum->GetYaxis()->FindBin(550));
+  h255->SetLineColor(4);
+  h255->SetMarkerColor(4);
+  h255->SetMarkerStyle(23);
+  h255->Add(hbgd, -fbgd->Integral(450, 550)/fbgd->Integral(-500, 0));
+  h255->Draw("E1 same");
+  
+  h979 = (TH1D*)msum->ProjectionX("h979", msum->GetYaxis()->FindBin(1000), msum->GetYaxis()->FindBin(1300));
+  h979->SetLineColor(6);
+  h979->SetMarkerColor(6);
+  h979->SetMarkerStyle(24);
+  h979->Add(hbgd, -fbgd->Integral(1000, 1300)/fbgd->Integral(-500, 0));
+  h979->Draw("E1 same");
+
+  TLegend* legend = new TLegend(0.1, 0.65, 0.9, 0.9);
+  legend->SetNColumns(2);
+  legend->AddEntry(h0, "0-keV (#it{l}=4)", "lp");
+  legend->AddEntry(h154, "154-keV (#it{l}=2)", "lp");
+  legend->AddEntry(h255, "255-keV (#it{l}=0)", "lp");
+  legend->AddEntry(h644, "644-keV (#it{l}=2)", "lp");
+  legend->AddEntry(h979, "979-keV (#it{l}=5)", "lp");
+  legend->Draw();
+
+  cout<<fpeaks->GetParameter(0)<<" "<<fpeaks->GetParameter(1)<<" "<<fpeaks->GetParameter(2)<<endl;
+  cout<<fpeaks->GetParameter(3)<<" "<<fpeaks->GetParameter(4)<<" "<<fpeaks->GetParameter(5)<<endl;
+  cout<<fpeaks->GetParameter(6)<<" "<<fpeaks->GetParameter(7)<<" "<<fpeaks->GetParameter(8)<<endl;
+  cout<<fpeaks->GetParameter(9)<<" "<<fpeaks->GetParameter(10)<<" "<<fpeaks->GetParameter(11)<<endl;
+  cout<<fpeaks->GetParameter(12)<<" "<<fpeaks->GetParameter(13)<<" "<<fpeaks->GetParameter(14)<<endl;
+  //  cout<<fpeaks->GetParameter(7)<<" "<<fpeaks->GetParameter(8)<<endl;
+
+  // cc->SaveAs("is686_1d_ex_theta_ebis_on_R3_R31.png");
+  // cm->SaveAs("is686_2d_ex_theta_ebis_on_R3_R31.png");
+
+  TCanvas* cz = new TCanvas("cz", "cz", 1500, 600);
+  cz->Divide(3,1);
+  for(int k = 0; k < 3; k++){
+    cz->cd(k+1);
+    mzsum[k]->Draw("colz");
+  }
+  
+}

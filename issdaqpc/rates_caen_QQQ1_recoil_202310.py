@@ -17,7 +17,7 @@ import urllib3
 # Settings
 THRESHOLD = 10000 # change font colour when threshold reached
 NEGATIVE = 5000000 # when the histograms are zeroed, we get a negative value that is unsigned, so a large positive false rate
-DAQ_URL =  'http://issdaqpc:8015/'
+DAQ_URL =  'http://issdaqpc1:8015/'
 DAQ_WSDL_SERVICE_NAME = 'DataAcquisitionControlServer'
 SPECTRUM_WSDL_SERVICE_NAME = 'SpectrumService'
 FULL_DAQ_URL = DAQ_URL + DAQ_WSDL_SERVICE_NAME
@@ -27,17 +27,19 @@ UPDATE_TIME = 2 # seconds
 
 
 # Channel mapping to MIDAS HISTOGRAM numbers / CAEN ADC channels
-RecoilE_chs = [64,66,69,71]
-RecoildE_chs = [65,67,68,70]
+RecoilE_chs = [65,67,69,71]
+RecoildE_chs = [64,66,68,70]
 ELUM_chs = [80,81,82,83]
 #ZD_chs = [84,85]
 ZD_chs = [86,87]
 EBIS_ch = 94
+#EBIS_delay_ch = 88
 T1_ch = 95
 Pulser_ch = 93
-Laser_ch = 91
-SC_ch = 92
-ArrayT_ch = 90
+Laser_ch = 92
+SC_ch = 88
+Heimtime_ch = 90
+FC_ch = 89
 
 # Initialise Colorama
 init()
@@ -142,17 +144,21 @@ if __name__ == '__main__':
 
 
 				print_rates(result, "EBIS", EBIS_ch)
+				#print_rates(result, "EBIS_delay", EBIS_delay_ch)
 				print_rates(result, "T1", T1_ch)
 				print_rates(result, "SC", SC_ch)
+				#print_rates(result, "FC", FC_ch)
 				print_rates(result, "Laser", Laser_ch)
 				print_rates(result, "Pulser", Pulser_ch)
-				print_rates(result, "ArrayT", ArrayT_ch)
+				print_rates(result, "Heimtime", Heimtime_ch)
 				payload += 'timing,name=EBIS value=' + str( get_rate(result,EBIS_ch) ) + '\n' 
+				#payload += 'timing,name=EBIS_delay value=' + str( get_rate(result,EBIS_delay_ch) ) + '\n' 
 				payload += 'timing,name=T1 value=' + str( get_rate(result,T1_ch) ) + '\n' 
 				payload += 'timing,name=SC value=' + str( get_rate(result,SC_ch) ) + '\n' 
+				#payload += 'timing,name=FC value=' + str( get_rate(result,FC_ch) ) + '\n' 
 				payload += 'timing,name=Laser value=' + str( get_rate(result,Laser_ch) ) + '\n' 
 				payload += 'timing,name=Pulser value=' + str( get_rate(result,Pulser_ch) ) + '\n'
-				payload += 'timing,name=ArrayT value=' + str( get_rate(result,ArrayT_ch) ) + '\n'
+				payload += 'timing,name=Heimtime value=' + str( get_rate(result,Heimtime_ch) ) + '\n'
 
 				# Send rates to Influx database
 				try:

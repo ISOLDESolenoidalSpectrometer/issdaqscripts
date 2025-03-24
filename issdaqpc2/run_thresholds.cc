@@ -1,3 +1,11 @@
+#include <iostream>
+#include <fstream>
+#include "TH1F.h"
+#include "TH2F.h"
+#include "TFile.h"
+
+using namespace std;
+
 int strip_threshold( TH1F *h ) {
 	
 	int thres;
@@ -6,7 +14,7 @@ int strip_threshold( TH1F *h ) {
 	double curval;
 	
 	int binlimit = 20;
-	double peakfraction = 0.005;
+	double peakfraction = 0.05;
 
 	for( int i = maxbin+1; i < maxbin + binlimit; ++i ){
 		
@@ -20,7 +28,7 @@ int strip_threshold( TH1F *h ) {
 
 }
 
-int run_thresholds( string filename ) {
+int run_thresholds( string filename) {
 	
 	TFile *infile = new TFile( filename.data() );
 	
@@ -28,7 +36,7 @@ int run_thresholds( string filename ) {
 	TH2F* h2;
 	TH1F* h1;
 
-	ofstream outfile( "thresholds.dat" );
+	ofstream outfile( "thresholds_2024.dat" );
 	
 	int thres;
 
@@ -58,7 +66,7 @@ int run_thresholds( string filename ) {
 				h2 = (TH2F*)infile->Get( hname.data() );
 
 				h1 = (TH1F*)h2->ProjectionY( "tmp", i+1, i+1 );
-
+				h1->Rebin(4);
 				thres = strip_threshold( h1 );
 
 				outfile << "asic_" << mod << "_" << asic << "_" << i;

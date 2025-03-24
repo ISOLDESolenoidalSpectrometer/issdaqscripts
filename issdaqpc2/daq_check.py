@@ -19,11 +19,12 @@ import urllib3
 import numpy as np
 
 # Settings
-DAQ_LIST = ['iss00','iss01','iss02','issdaqpc']
+DAQ_LIST = ['iss00','iss01','iss02','issdaqpc1']
 DAQ_WSDL_SERVICE_NAME = 'DataAcquisitionControlServer'
 TAPE_WSDL_SERVICE_NAME = 'TapeServer'
 HEADER = {'content-type': 'text/xml'}
-UPDATE_TIME = 5 # seconds
+TIMEOUT = 1 # seconds
+UPDATE_TIME = 2 # seconds
 
 # Initialise Colorama
 init()
@@ -49,10 +50,16 @@ if __name__ == '__main__':
 		soap_env = get_soap_envelope(FULL_TAPE_URL,'InquireAcqStatus','')
 		r = None
 		try:
-			r = requests.post( FULL_TAPE_URL, data=soap_env, headers=HEADER )			
+			r = requests.post( FULL_TAPE_URL, data=soap_env, headers=HEADER, timeout=TIMEOUT )
 		except OSError:
 			payload += 'tape,name=' + str(TAPE_HOST) + ' state=-1' + '\n'
 			print( payload )
+		except requests.Timeout:
+			payload += 'tape,name=' + str(TAPE_HOST) + ' state=-1' + '\n'
+			pass
+		except requests.ConnectionError:
+			payload += 'tape,name=' + str(TAPE_HOST) + ' state=-1' + '\n'
+			pass
 
 		if r is not None:
 			tree = ET.ElementTree(ET.fromstring(r.text))
@@ -103,8 +110,29 @@ if __name__ == '__main__':
 					else:
 						payload += 'file free=' + str(disk_free) + ',used=' + str(disk_used) + '\n'
 
+		# Data rate
+		params = '<ns:id xsi:type="xsd:int">1</ns:id>'
+		soap_env = get_soap_envelope(FULL_TAPE_URL,'InquireStreamState',params)
+		r = None
+		try:
+			r = requests.post( FULL_TAPE_URL, data=soap_env, headers=HEADER, timeout=TIMEOUT )
+		except requests.exceptions.Timeout:
+ 			print( "Timeout on tape server at", str(TAPE_HOST) )
+		except OSError:
+			payload += 'data,name=' + str(TAPE_HOST) + ' rate=0,blocks=0,kB=0' + '\n'
+			print( payload )
 
+		if r is not None:
+			tree = ET.ElementTree(ET.fromstring(r.text))
+			root = tree.getroot()
+			for res in root.iter():
+				if res.text is not None:
+					data_status = res.text.split()
+					if len(data_status) == 5:
+						payload += 'data,name=' + str(TAPE_HOST) + ' rate=' + str(data_status[4])
+						payload += ',blocks=' + str(data_status[2]) + ',kB=' + str(data_status[3]) + '\n'
 
+		# DAQ info
 		for DAQ in DAQ_LIST:
 
 			DAQ_URL =  'http://' + str(DAQ) + ':8015/'
@@ -113,9 +141,15 @@ if __name__ == '__main__':
 			soap_env = get_soap_envelope(FULL_DAQ_URL,'GetState','')
 			r = None
 			try:
-				r = requests.post( FULL_DAQ_URL, data=soap_env, headers=HEADER )
+				r = requests.post( FULL_DAQ_URL, data=soap_env, headers=HEADER, timeout=TIMEOUT )
 			except OSError:
 				payload += 'daq,name=' + str(DAQ) + ' state=-1' + '\n'
+			except requests.Timeout:
+				payload += 'daq,name=' + str(DAQ) + ' state=-1' + '\n'
+				pass
+			except requests.ConnectionError:
+				payload += 'daq,name=' + str(DAQ) + ' state=-1' + '\n'
+				pass
 
 			if r is not None:
 				tree = ET.ElementTree(ET.fromstring(r.text))
@@ -139,8 +173,20 @@ if __name__ == '__main__':
 			print( payload )
 			r = requests.post( 'https://dbod-iss.cern.ch:8080/write?db=daq', data=payload, auth=("admin","issmonitor"), verify=False )
 		except ConnectionError:
-			print("Error connecting to influx")
-			pass
+			print("ConnectionError: Error connecting to DBOD server, waiting extra cycle")
+			time.sleep( UPDATE_TIME )
+		except requests.exceptions.Timeout:
+			print( 'Timeout on InfluxDB server' )
+			time.sleep( UPDATE_TIME )
+		except ConnectionRefusedError:
+			print("Connection Refused Error: Error connecting to DBOD server, waiting extra cycle")
+			time.sleep( UPDATE_TIME )
+		except requests.exceptions.ConnectionError:
+			print("Connection Error: Error connecting to DBOD server, waiting extra cycle")
+			time.sleep( UPDATE_TIME )
+		except requests.exceptions.MaxRetryError:
+			print("Maximum number of retries reached: error connecting to DBOD server, waiting extra cycle")
+			time.sleep( UPDATE_TIME )
 
 
 		# Wait for next update

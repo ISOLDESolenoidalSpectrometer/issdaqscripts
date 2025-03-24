@@ -13,11 +13,12 @@ from xml.etree import ElementTree as ET
 import base64
 from colorama import init, Fore, Back, Style
 import urllib3
+import numpy as np
 
 # Settings
 THRESHOLD = 10000 # change font colour when threshold reached
 NEGATIVE = 5000000 # when the histograms are zeroed, we get a negative value that is unsigned, so a large positive false rate
-DAQ_URL =  'http://issdaqpc:8015/'
+DAQ_URL =  'http://issdaqpc1:8015/'
 DAQ_WSDL_SERVICE_NAME = 'DataAcquisitionControlServer'
 SPECTRUM_WSDL_SERVICE_NAME = 'SpectrumService'
 FULL_DAQ_URL = DAQ_URL + DAQ_WSDL_SERVICE_NAME
@@ -27,17 +28,25 @@ UPDATE_TIME = 2 # seconds
 
 
 # Channel mapping to MIDAS HISTOGRAM numbers / CAEN ADC channels
-RecoilE_chs = [64,66,69,71]
-RecoildE_chs = [65,67,68,70]
-ELUM_chs = [80,81,82,83]
+RecoilE_chs = [65,67,69,71]
+RecoildE_chs = [64,66,68,70]
+ELUM_chs = [80,84,82,83]
 #ZD_chs = [84,85]
 ZD_chs = [86,87]
 EBIS_ch = 94
+#EBIS_delay_ch = 88
 T1_ch = 95
 Pulser_ch = 93
-Laser_ch = 91
-SC_ch = 92
-ArrayT_ch = 90
+Laser_ch = 92
+SC_ch = 88
+Heimtime_ch = 90
+FC_ch = 89
+
+
+# counts and rates
+counts_by_ch = np.zeros(128)
+rates_by_ch = np.zeros(128)
+
 
 # Initialise Colorama
 init()
@@ -46,15 +55,13 @@ def get_soap_envelope(server,method,params=''):
 	body = '<?xml version="1.0" encoding="UTF-8"?><SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:SOAP-ENC="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsi="http://www.w3.org/1999/XMLSchema-instance" xmlns:xsd="http://www.w3.org/1999/XMLSchema" SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><SOAP-ENV:Body><ns:%s xmlns:ns="urn:%s">%s</ns:%s></SOAP-ENV:Body></SOAP-ENV:Envelope>' % (method,server,params,method)
 	return body
 	
-def print_rates(bytes, name, ch):
-	rate_ch = bytes[ (ch)*4 : (ch)*4+4]
-	rate_ch_int = int.from_bytes(rate_ch, byteorder='little') / 3
-	if rate_ch_int > NEGATIVE or rate_ch_int < 0:
-		print(name + " (ch %3d): " % ch + Fore.GREEN + str(0) + Style.RESET_ALL)
-	elif rate_ch_int > THRESHOLD:
-		print(name + " (ch %3d): " % ch + Fore.RED + str(rate_ch_int) + Style.RESET_ALL)
+def print_rates(name, rate):
+	if rate > NEGATIVE or rate < 0:
+		print(name + ':\t' + Fore.GREEN + str(0) + Style.RESET_ALL)
+	elif rate > THRESHOLD:
+		print(name + ':\t' + Fore.RED + str(rate) + Style.RESET_ALL)
 	else :
-		print(name + " (ch %3d): " % ch + Fore.GREEN + str(rate_ch_int) + Style.RESET_ALL)
+		print(name + ':\t' + Fore.GREEN + str(rate) + Style.RESET_ALL)
 
 def get_rate(bytes, ch):
 	rate_ch = bytes[ (ch)*4 : (ch)*4+4]
@@ -71,6 +78,7 @@ if __name__ == '__main__':
 	urllib3.disable_warnings( urllib3.exceptions.InsecureRequestWarning )
 
 	# Keep the script running
+	first_check = True
 	while True:
 
 		#
@@ -102,7 +110,7 @@ if __name__ == '__main__':
 			#
 			# Get the Rate histogram from SpectrumService WSDL service
 			#
-			spectrum_name = 'Rate'
+			spectrum_name = 'Stat'
 			params ='<ns:Name xsi:type="xsd:string">%s</ns:Name><ns:Base xsi:type="xsd:int">0</ns:Base><ns:Range xsi:type="xsd:int">512</ns:Range>' % (spectrum_name)
 
 			soap_env = get_soap_envelope(FULL_SPECTRUM_URL,'SpecRead1D',params)
@@ -125,40 +133,119 @@ if __name__ == '__main__':
 			payload = ''
 			if result != '' and result != None:
 				for i in range(len(RecoilE_chs)):
-					print_rates(result, "RecoilE ", RecoilE_chs[i] )
-					payload += 'detector,name=Recoil,id=E,sector=' + str(i) + ' value=' + str( get_rate(result,RecoilE_chs[i]) ) + '\n'
+					#print_rates(result, "RecoilE ", RecoilE_chs[i] )
+					ch_stat = get_rate(result,RecoilE_chs[i])
+					ch_rate = ch_stat - counts_by_ch[RecoilE_chs[i]]
+					if ch_rate < 0:
+						ch_rate = 0
+					ch_rate /= UPDATE_TIME
+					counts_by_ch[RecoilE_chs[i]] = ch_stat
+					payload += 'detector,name=Recoil,id=E,sector=' + str(i) + ' value=' + str( ch_rate ) + '\n'
+					print_rates( 'RecoilE ' + str(i), ch_rate )
 
 				for i in range(len(RecoildE_chs)):
-					print_rates(result, "RecoildE", RecoildE_chs[i])
-					payload += 'detector,name=Recoil,id=dE,sector=' + str(i) + ' value=' + str( get_rate(result,RecoildE_chs[i]) ) + '\n'
+					#print_rates(result, "RecoildE", RecoildE_chs[i])
+					ch_stat = get_rate(result,RecoildE_chs[i])
+					ch_rate = ch_stat - counts_by_ch[RecoildE_chs[i]]
+					if ch_rate < 0:
+						ch_rate = 0
+					ch_rate /= UPDATE_TIME
+					counts_by_ch[RecoildE_chs[i]] = ch_stat					
+					payload += 'detector,name=Recoil,id=dE,sector=' + str(i) + ' value=' + str( ch_rate ) + '\n'
+					print_rates( 'RecoildE ' + str(i), ch_rate )
 
 				for i in range(len(ELUM_chs)):
-					print_rates(result, "ELUM", ELUM_chs[i])
-					payload += 'detector,name=ELUM,sector=' + str(i) + ' value=' + str( get_rate(result,ELUM_chs[i]) ) + '\n'
+					#print_rates(result, "ELUM", ELUM_chs[i])
+					ch_stat = get_rate(result,ELUM_chs[i])
+					ch_rate = ch_stat - counts_by_ch[ELUM_chs[i]]
+					if ch_rate < 0:
+						ch_rate = 0
+					ch_rate /= UPDATE_TIME
+					counts_by_ch[ELUM_chs[i]] = ch_stat					
+					payload += 'detector,name=ELUM,sector=' + str(i) + ' value=' + str( ch_rate ) + '\n'
+					print_rates( 'ELUM ' + str(i), ch_rate )
 
 				for i in range(len(ZD_chs)):
-					print_rates(result, "ZeroDegree", ZD_chs[i])
-					payload += 'detector,name=ZeroDegree,id=' + str(i) + ' value=' + str( get_rate(result,ZD_chs[i]) ) + '\n'
+					#print_rates(result, "ZeroDegree", ZD_chs[i])
+					ch_stat = get_rate(result,ZD_chs[i])
+					ch_rate = ch_stat - counts_by_ch[ZD_chs[i]]
+					if ch_rate < 0:
+						ch_rate = 0
+					ch_rate /= UPDATE_TIME
+					counts_by_ch[ZD_chs[i]] = ch_stat					
+					payload += 'detector,name=ZeroDegree,id=' + str(i) + ' value=' + str( ch_rate ) + '\n'
+					print_rates( 'ZeroDegree ' + str(i), ch_rate )
 
 
-				print_rates(result, "EBIS", EBIS_ch)
-				print_rates(result, "T1", T1_ch)
-				print_rates(result, "SC", SC_ch)
-				print_rates(result, "Laser", Laser_ch)
-				print_rates(result, "Pulser", Pulser_ch)
-				print_rates(result, "ArrayT", ArrayT_ch)
-				payload += 'timing,name=EBIS value=' + str( get_rate(result,EBIS_ch) ) + '\n' 
-				payload += 'timing,name=T1 value=' + str( get_rate(result,T1_ch) ) + '\n' 
-				payload += 'timing,name=SC value=' + str( get_rate(result,SC_ch) ) + '\n' 
-				payload += 'timing,name=Laser value=' + str( get_rate(result,Laser_ch) ) + '\n' 
-				payload += 'timing,name=Pulser value=' + str( get_rate(result,Pulser_ch) ) + '\n'
-				payload += 'timing,name=ArrayT value=' + str( get_rate(result,ArrayT_ch) ) + '\n'
+				# EBIS
+				ch_stat = get_rate(result, EBIS_ch)
+				ch_rate = ch_stat - counts_by_ch[EBIS_ch]
+				if ch_rate < 0:
+					ch_rate = 0
+				ch_rate /= UPDATE_TIME
+				counts_by_ch[EBIS_ch] = ch_stat
+				payload += 'timing,name=EBIS value=' + str( ch_rate ) + '\n'
+				print_rates( 'EBIS ' + str(i), ch_rate )
+				
+				# T1
+				ch_stat = get_rate(result, T1_ch)
+				ch_rate = ch_stat - counts_by_ch[T1_ch]
+				if ch_rate < 0:
+					ch_rate = 0
+				ch_rate /= UPDATE_TIME
+				counts_by_ch[T1_ch] = ch_stat
+				payload += 'timing,name=T1 value=' + str( ch_rate ) + '\n'
+				print_rates( 'T1 ' + str(i), ch_rate )
+				
+				# SC
+				ch_stat = get_rate(result, SC_ch)
+				ch_rate = ch_stat - counts_by_ch[SC_ch]
+				if ch_rate < 0:
+					ch_rate = 0
+				ch_rate /= UPDATE_TIME
+				counts_by_ch[SC_ch] = ch_stat
+				payload += 'timing,name=SC value=' + str( ch_rate ) + '\n'
+				print_rates( 'SC ' + str(i), ch_rate )
 
+				# Pulser
+				ch_stat = get_rate(result, Pulser_ch)
+				ch_rate = ch_stat - counts_by_ch[Pulser_ch]
+				if ch_rate < 0:
+					ch_rate = 0
+				ch_rate /= UPDATE_TIME
+				counts_by_ch[Pulser_ch] = ch_stat
+				payload += 'timing,name=Pulser value=' + str( ch_rate ) + '\n'
+				print_rates( 'Pulser ' + str(i), ch_rate )
+				
+				# Laser
+				ch_stat = get_rate(result, Laser_ch)
+				ch_rate = ch_stat - counts_by_ch[Laser_ch]
+				if ch_rate < 0:
+					ch_rate = 0
+				ch_rate /= UPDATE_TIME
+				counts_by_ch[Laser_ch] = ch_stat
+				payload += 'timing,name=Laser value=' + str( ch_rate ) + '\n'
+				print_rates( 'Laser ' + str(i), ch_rate )
+				
+				# Heimtime
+				ch_stat = get_rate(result, Heimtime_ch)
+				ch_rate = ch_stat - counts_by_ch[Heimtime_ch]
+				if ch_rate < 0:
+					ch_rate = 0
+				ch_rate /= UPDATE_TIME
+				counts_by_ch[Heimtime_ch] = ch_stat
+				payload += 'timing,name=Heimtime value=' + str( ch_rate ) + '\n'
+				print_rates( 'Heimtime ' + str(i), ch_rate )
+				
 				# Send rates to Influx database
-				try:
-					r = requests.post( 'https://dbod-iss.cern.ch:8080/write?db=rates', data=payload, auth=("admin","issmonitor"), verify=False )
-				except:
-					pass
+				if first_check == False:
+					try:
+						r = requests.post( 'https://dbod-iss.cern.ch:8080/write?db=rates', data=payload, auth=("admin","issmonitor"), verify=False )
+					except:
+						pass
+				else:
+					first_check = False
+					continue
 
 
 		# Sleep for a while and check again

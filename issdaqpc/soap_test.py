@@ -7,7 +7,7 @@ import requests
 from xml.etree import ElementTree as ET
 import base64
 
-#DAQ_URL =  'http://issdaqpc:8015/'
+#DAQ_URL =  'http://issdaqpc1:8015/'
 DAQ_URL =  'http://localhost:8015/'
 DAQ_WSDL_SERVICE_NAME = 'SpectrumService'
 FULL_URL = DAQ_URL + DAQ_WSDL_SERVICE_NAME
